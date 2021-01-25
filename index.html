@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+
+<head>
+
+  <title>AWESOME CHESS</title>
+
+  <link rel="stylesheet" href="static/chessboard.min.css">
+  <script src="static/jquery.min.js"></script>
+  <script src="static/chessboard.min.js"></script>
+  <script src="static/chess.js"></script>
+
+  <!-- ENGINER IMPORT -->
+  <script src="engine/evaluation.js"></script>
+  <script src="engine/minimax.js"></script>
+
+  <style>
+    #myBoard {
+      margin: 2em auto;
+      width: 600px;
+    }
+  </style>
+
+</head>
+
+<body>
+  <div id="status"></div>
+  <hr>
+  <div id="pgn"></div>
+  <hr>
+
+  Depth / Difficulty: 
+  <select id="depth" onchange="changeDepth()">
+    <option value="Audi">1
+    <option selected value="BMW">2
+    <option value="Mercedes">3
+  </select>
+
+
+  <div id="myBoard"></div>
+  <script src="index.js"></script>
+</body>
+
+</html>

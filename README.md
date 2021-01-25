@@ -1,8 +1,13 @@
 # chess-engine-s2
-A noob chess engine
+A Noob chess engine
 
-# Requirements
-- ???
+# ToDo
+- Improve evalutaion heuristic
+    - Consider captures
+    - Endgames
 
-# Algorithm 
-- Probably alpha-beta
+- Add evaluation Bar
+
+- Add AI thinking animation
+
+- Implement Nueral Net for better search
