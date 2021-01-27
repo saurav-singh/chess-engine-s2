@@ -1,5 +1,5 @@
 // Weights for pieces
-const weights = { 'p': 100, 'n': 300, 'b': 300, 'r': 500, 'q': 900, 'k': 1, 'k_e': 1 };
+const weights = { 'p': 10, 'n': 30, 'b': 30, 'r': 50, 'q': 90, 'k': 1, 'k_e': 100 };
 
 // Weights for white position
 const pos_white = {
@@ -130,8 +130,8 @@ const evaluation = (board, game = null) => {
     if (game.in_checkmate()) score_black_pieces -= 10000;
 
     return {
-        // white: score_white,
-        // black: score_black,
+        white: score_white,
+        black: score_black,
         white_pieces: score_white_pieces,
         black_pieces: score_black_pieces
     }

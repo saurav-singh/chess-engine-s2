@@ -14,7 +14,6 @@ const start = (depth = 2, AI_color = "b") => {
   let $fen = $('#fen');
   let $pgn = $('#pgn');
 
-
   const onDragStart = (source, piece, position, orientation) => {
     if (game.game_over() ||
       (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
@@ -38,12 +37,23 @@ const start = (depth = 2, AI_color = "b") => {
     updateStatus();
 
     // AI moves
+    window.setTimeout(aiMove, 250);
+
+  }
+
+  const aiMove = () => {
     if (game.turn() == AI_color) {
       let d = minimax(game, depth);
       game.move(d.move);
+      onSnapEnd();
+      updateStatus();
     }
-  }
 
+    const current_board = ChessBoard.fenToObj(game.fen());
+    const eval = evaluation(current_board, game);
+    console.log(eval);
+
+  }
 
   const updateStatus = () => {
     let status = ''
@@ -78,11 +88,47 @@ const start = (depth = 2, AI_color = "b") => {
     $pgn.html(game.pgn())
   }
 
+  var onMouseoutSquare = function (square, piece) {
+    removeGreySquares();
+  };
+
+  var onMouseoverSquare = function (square, piece) {
+    var moves = game.moves({
+      square: square,
+      verbose: true
+    });
+
+    if (moves.length === 0) return;
+
+    greySquare(square);
+
+    for (var i = 0; i < moves.length; i++) {
+      greySquare(moves[i].to);
+    }
+  };
+
+  const removeGreySquares = () => {
+    $('#myBoard .square-55d63').css('background', '');
+  }
+
+  const greySquare = (square) => {
+    var squareEl = $('#myBoard .square-' + square);
+
+    var background = '#a9a9a9';
+    if (squareEl.hasClass('black-3c85d') === true) {
+      background = '#696969';
+    }
+
+    squareEl.css('background', background);
+  }
+
   let config = {
     draggable: true,
     position: 'start',
     onDragStart: onDragStart,
     onDrop: onDrop,
+    onMouseoutSquare: onMouseoutSquare,
+    onMouseoverSquare: onMouseoverSquare,
     onSnapEnd: onSnapEnd,
   }
 
