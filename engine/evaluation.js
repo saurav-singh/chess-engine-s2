@@ -1,8 +1,3 @@
-// Evaluation Function
-
-// Weights value from Sunfish engine
-
-
 // Weights for pieces
 const weights = { 'p': 100, 'n': 300, 'b': 300, 'r': 500, 'q': 900, 'k': 1, 'k_e': 1 };
 
@@ -105,7 +100,7 @@ const boardToArray = {
     a1: [7, 0], b1: [7, 1], c1: [7, 2], d1: [7, 3], e1: [7, 4], f1: [7, 6], g1: [7, 6], h1: [7, 7],
 }
 // Evlauation Function
-function evaluation(board) {
+const evaluation = (board, game = null) => {
 
     let score_white = 0;
     let score_black = 0;
@@ -129,9 +124,14 @@ function evaluation(board) {
         }
     }
 
+    console.log(game.turn());
+
+    if (game.in_check()) score_black_pieces -= 500;
+    if (game.in_checkmate()) score_black_pieces -= 10000;
+
     return {
-        white: score_white,
-        black: score_black,
+        // white: score_white,
+        // black: score_black,
         white_pieces: score_white_pieces,
         black_pieces: score_black_pieces
     }

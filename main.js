@@ -1,66 +1,51 @@
-let depth = parseInt($('#depth').find(":selected").text());
+$(document).ready(() => start());
 
-$(document).ready(() => {
+// Change Difficulty | Depth 
+const changeDepth = () => start(parseInt($('#depth').find(":selected").text()));
 
-  start();
-});
+// Reset Game
+const resetGame = () => start();
 
-function changeDepth() {
-  depth = parseInt($('#depth').find(":selected").text());
-  start();
-}
+// Start Game
+const start = (depth = 2, AI_color = "b") => {
+  let board = null;
+  let game = new Chess();
+  let $status = $('#status');
+  let $fen = $('#fen');
+  let $pgn = $('#pgn');
 
-function start() {
-  let board = null
-  let game = new Chess()
-  let $status = $('#status')
-  let $fen = $('#fen')
-  let $pgn = $('#pgn')
 
-  function onDragStart(source, piece, position, orientation) {
-    // do not pick up pieces if the game is over
-    if (game.game_over()) return false
-
-    // only pick up pieces for the side to move
-    if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
-      (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+  const onDragStart = (source, piece, position, orientation) => {
+    if (game.game_over() ||
+      (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+      (game.turn() === 'b' && piece.search(/^w/) !== -1))
       return false
-    }
   }
 
-  function onDrop(source, target) {
+  const onSnapEnd = () => board.position(game.fen());
 
+  const onDrop = (source, target) => {
 
-    // see if the move is legal
     let move = game.move({
       from: source,
       to: target,
       promotion: 'q' // NOTE: always promote to a queen for example simplicity
-    })
+    });
 
-    // illegal move
+    // Illegal Move
     if (move === null) return 'snapback'
 
-    updateStatus()
+    updateStatus();
 
-    // const current_board = ChessBoard.fenToObj(game.fen());
-    // const eval = evaluation(current_board);
-    // console.log(eval);
-    if (game.turn() == "b") {
+    // AI moves
+    if (game.turn() == AI_color) {
       let d = minimax(game, depth);
       game.move(d.move);
-
     }
-
   }
 
-  // update the board position after the piece snap
-  // for castling, en passant, pawn promotion
-  function onSnapEnd() {
-    board.position(game.fen())
-  }
 
-  function updateStatus() {
+  const updateStatus = () => {
     let status = ''
 
     let moveColor = 'White'
@@ -91,7 +76,6 @@ function start() {
     $status.html(status)
     $fen.html(game.fen())
     $pgn.html(game.pgn())
-
   }
 
   let config = {
@@ -99,7 +83,7 @@ function start() {
     position: 'start',
     onDragStart: onDragStart,
     onDrop: onDrop,
-    onSnapEnd: onSnapEnd
+    onSnapEnd: onSnapEnd,
   }
 
   board = ChessBoard('myBoard', config)

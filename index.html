@@ -15,26 +15,61 @@
   <script src="engine/minimax.js"></script>
 
   <style>
+    html,
+    body {
+      overflow: hidden;
+      height: 100vh;
+      background-color: #222;
+      color: #aaa;
+      font-family: sans-serif;
+    }
+
+    #info {
+      height: 120px;
+      border: solid 2px #777;
+      padding: 10px;
+      line-height: 1.5em;
+      overflow: auto;
+    }
+
+    #pgn,
+    #fen {
+      font-size: 9px;
+    }
+
+    #status {
+      font-weight: bold;
+      color: coral;
+    }
+
     #myBoard {
-      margin: 2em auto;
-      width: 600px;
+      margin: 1em auto;
+      width: 500px;
     }
   </style>
 
 </head>
 
 <body>
-  <div id="status"></div>
-  <hr>
-  <div id="pgn"></div>
-  <hr>
+  <div id="info">
+    <div id="status"> </div>
 
-  Depth / Difficulty: 
-  <select id="depth" onchange="changeDepth()">
-    <option value="Audi">1
-    <option selected value="BMW">2
-    <option value="Mercedes">3
-  </select>
+    <div id="control">
+
+      Depth / Difficulty:
+      <select id="depth" onchange="changeDepth()">
+        <option value="Audi">1
+        <option selected value="BMW">2
+        <option value="Mercedes">3
+      </select>
+
+      <button onclick="resetGame()">Reset</button>
+
+    </div>
+
+    <div id="fen"></div>
+    <div id="pgn"></div>
+  </div>
 
 
   <div id="myBoard"></div>

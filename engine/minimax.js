@@ -2,20 +2,20 @@ const REDUCER = 0.7;
 const POS_INF = Number.POSITIVE_INFINITY;
 const NEG_INF = Number.NEGATIVE_INFINITY;
 
-function minimax(game, depth = 2) {
+const minimax = (game, depth = 2) => {
     depth = Math.min(depth, 3);
     return maximize(game, depth, NEG_INF, POS_INF);
 }
 
 
-function maximize(game, depth, alpha, beta) {
+const maximize = (game, depth, alpha, beta) => {
 
     let R = { move: "", value: NEG_INF };
 
     // Check endgame state
     if (depth == 0 || game.game_over()) {
         const current_board = ChessBoard.fenToObj(game.fen());
-        const eval = evaluation(current_board);
+        const eval = evaluation(current_board, game);
         R.value = (eval.black_pieces - eval.white_pieces) * REDUCER;
         // R.value = (eval.black - eval.white) * REDUCER; Need to improve this 
         return R;
@@ -25,11 +25,10 @@ function maximize(game, depth, alpha, beta) {
 
     for (let i = 0; i < actions.length; i++) {
 
-        const newGame = new Chess(game.fen());
         const move = actions[i];
-        newGame.move(move);
-
-        let d = minimize(newGame, depth - 1, alpha, beta);
+        game.move(move);
+        let d = minimize(game, depth - 1, alpha, beta);
+        game.undo();
 
         if (d.value > R.value) {
             R.move = move;
@@ -43,14 +42,14 @@ function maximize(game, depth, alpha, beta) {
     return R;
 }
 
-function minimize(game, depth, alpha, beta) {
+const minimize = (game, depth, alpha, beta) => {
 
     let R = { move: "", value: POS_INF };
 
     // Check endgame state
     if (depth == 0 || game.game_over()) {
         const current_board = ChessBoard.fenToObj(game.fen());
-        const eval = evaluation(current_board);
+        const eval = evaluation(current_board, game);
         R.value = (eval.black_pieces - eval.white_pieces) * REDUCER;
         // R.value = (eval.black - eval.white) * REDUCER; Need to improve this 
         return R;
@@ -61,11 +60,10 @@ function minimize(game, depth, alpha, beta) {
     // Compute minimax for each action
     for (let i = 0; i < actions.length; i++) {
 
-        const newGame = new Chess(game.fen());
         const move = actions[i];
-        newGame.move(move);
-
-        let d = maximize(newGame, depth - 1, alpha, beta);
+        game.move(move);
+        let d = maximize(game, depth - 1, alpha, beta);
+        game.undo();
 
         if (d.value < R.value) {
             R.move = move;
