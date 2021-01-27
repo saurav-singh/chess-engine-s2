@@ -1,5 +1,5 @@
 // Weights for pieces
-const weights = { 'p': 10, 'n': 30, 'b': 30, 'r': 50, 'q': 90, 'k': 1, 'k_e': 100 };
+const weights = { 'p': 10, 'n': 30, 'b': 30, 'r': 50, 'q': 90, 'k': 1, 'k_e': 1 };
 
 // Weights for white position
 const pos_white = {
@@ -100,12 +100,13 @@ const boardToArray = {
     a1: [7, 0], b1: [7, 1], c1: [7, 2], d1: [7, 3], e1: [7, 4], f1: [7, 6], g1: [7, 6], h1: [7, 7],
 }
 // Evlauation Function
-const evaluation = (board, game = null) => {
+const evaluation = (board, game = null, ai_color = "b") => {
 
     let score_white = 0;
     let score_black = 0;
     let score_white_pieces = 0;
     let score_black_pieces = 0;
+    let score = 0;
 
     for (pos in board) {
         const piece = board[pos];
@@ -119,20 +120,28 @@ const evaluation = (board, game = null) => {
         }
 
         else {
-            score_white += (score + pos_white.p[px[0]][px[1]]);
+            score_white += (score * pos_white.p[px[0]][px[1]]);
             score_white_pieces += score;
         }
     }
 
-    console.log(game.turn());
+    if (ai_color == "b") {
+        if (game.in_check()) score_black_pieces -= 50;
+        if (game.in_checkmate()) score_black_pieces -= 10000;
+        score = score_black_pieces - score_white_pieces;
+    }
+    else {
+        if (game.in_check()) score_white_pieces -= 50;
+        if (game.in_checkmate()) score_white_pieces -= 10000;
+        score = score_white_pieces - score_black_pieces;
+    }
 
-    if (game.in_check()) score_black_pieces -= 500;
-    if (game.in_checkmate()) score_black_pieces -= 10000;
 
     return {
-        white: score_white,
-        black: score_black,
-        white_pieces: score_white_pieces,
-        black_pieces: score_black_pieces
+        // white: score_white,
+        // black: score_black,
+        // white_pieces: score_white_pieces,
+        // black_pieces: score_black_pieces,
+        score: score,
     }
 }

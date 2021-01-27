@@ -1,4 +1,4 @@
-const REDUCER = 0.7;
+const REDUCER = 1;
 const POS_INF = Number.POSITIVE_INFINITY;
 const NEG_INF = Number.NEGATIVE_INFINITY;
 
@@ -16,8 +16,8 @@ const maximize = (game, depth, alpha, beta) => {
     if (depth == 0 || game.game_over()) {
         const current_board = ChessBoard.fenToObj(game.fen());
         const eval = evaluation(current_board, game);
-        R.value = (eval.black_pieces - eval.white_pieces) * REDUCER;
-        // R.value = (eval.black - eval.white) * REDUCER; Need to improve this 
+        // R.value = (eval.black_pieces - eval.white_pieces) * REDUCER;
+        R.value = eval.score * REDUCER; 
         return R;
     }
 
@@ -50,8 +50,8 @@ const minimize = (game, depth, alpha, beta) => {
     if (depth == 0 || game.game_over()) {
         const current_board = ChessBoard.fenToObj(game.fen());
         const eval = evaluation(current_board, game);
-        R.value = (eval.black_pieces - eval.white_pieces) * REDUCER;
-        // R.value = (eval.black - eval.white) * REDUCER; Need to improve this 
+        // R.value = (eval.black_pieces - eval.white_pieces) * REDUCER;
+        R.value = eval.score * REDUCER; 
         return R;
     }
 

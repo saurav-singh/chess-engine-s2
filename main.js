@@ -1,3 +1,5 @@
+let game = new Chess();
+
 $(document).ready(() => start());
 
 // Change Difficulty | Depth 
@@ -20,6 +22,8 @@ const start = (depth = 2, AI_color = "b") => {
       (game.turn() === 'b' && piece.search(/^w/) !== -1))
       return false
   }
+
+
 
   const onSnapEnd = () => board.position(game.fen());
 
