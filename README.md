@@ -12,4 +12,4 @@ A Noob chess engine
 
 - Implement Nueral Net for better search
 
-- Try it out [https://sauravsingh.me/chess-engine-s2/](HERE)
+- Try it out [HERE](https://sauravsingh.me/chess-engine-s2/)
