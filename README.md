@@ -11,3 +11,5 @@ A Noob chess engine
 - Add AI thinking animation
 
 - Implement Nueral Net for better search
+
+- Try it out [https://sauravsingh.me/chess-engine-s2/](HERE)
