@@ -1,5 +1,3 @@
-let game = new Chess();
-
 $(document).ready(() => start());
 
 // Change Difficulty | Depth 
@@ -8,13 +6,57 @@ const changeDepth = () => start(parseInt($('#depth').find(":selected").text()));
 // Reset Game
 const resetGame = () => start();
 
+// Update evaluation bar
+const updateEvalBar = (score) => {
+  const $evalBar = $('#eval-bar');
+  const $evalValue = $('#eval-value');
+
+  // Clamp score to reasonable range for display
+  const clampedScore = Math.max(-10, Math.min(10, score / 100));
+
+  // Convert score to percentage (0-100%)
+  // Score of 0 = 50%, positive favors white, negative favors black
+  const percentage = 50 + (clampedScore * 5);
+
+  $evalBar.css('width', percentage + '%');
+
+  // Format display value
+  let displayValue;
+  if (Math.abs(score) > 900) {
+    displayValue = score > 0 ? 'White winning' : 'Black winning';
+  } else {
+    displayValue = (score / 100).toFixed(1);
+  }
+
+  $evalValue.html(displayValue);
+}
+
+// Update move history display
+const updateMoveHistory = (pgn) => {
+  const $moveHistory = $('#move-history');
+  const moves = pgn.split(/\d+\./).filter(m => m.trim());
+
+  let html = '';
+  moves.forEach((movePair, index) => {
+    const [whiteMove, blackMove] = movePair.trim().split(/\s+/);
+    html += `<div class="move-pair">`;
+    html += `<span class="move-number">${index + 1}.</span>`;
+    html += `<span class="move">${whiteMove || ''}</span>`;
+    html += `<span class="move">${blackMove || ''}</span>`;
+    html += `</div>`;
+  });
+
+  $moveHistory.html(html);
+  // Auto-scroll to bottom
+  $moveHistory.scrollTop($moveHistory[0].scrollHeight);
+}
+
 // Start Game
 const start = (depth = 2, AI_color = "b") => {
   let board = null;
   let game = new Chess();
   let $status = $('#status');
   let $fen = $('#fen');
-  let $pgn = $('#pgn');
 
   const onDragStart = (source, piece, position, orientation) => {
     if (game.game_over() ||
@@ -29,10 +71,25 @@ const start = (depth = 2, AI_color = "b") => {
 
   const onDrop = (source, target) => {
 
+    // Check if this is a pawn promotion
+    const piece = game.get(source);
+    let promotionPiece = 'q'; // Default to queen
+
+    if (piece && piece.type === 'p' &&
+        ((piece.color === 'w' && target[1] === '8') ||
+         (piece.color === 'b' && target[1] === '1'))) {
+      // Ask user for promotion piece
+      promotionPiece = prompt('Promote to (q/r/b/n):', 'q') || 'q';
+      promotionPiece = promotionPiece.toLowerCase();
+      if (!['q', 'r', 'b', 'n'].includes(promotionPiece)) {
+        promotionPiece = 'q'; // Default to queen for invalid input
+      }
+    }
+
     let move = game.move({
       from: source,
       to: target,
-      promotion: 'q' // NOTE: always promote to a queen for example simplicity
+      promotion: promotionPiece
     });
 
     // Illegal Move
@@ -53,9 +110,10 @@ const start = (depth = 2, AI_color = "b") => {
       updateStatus();
     }
 
+    // Update evaluation display
     const current_board = ChessBoard.fenToObj(game.fen());
-    const eval = evaluation(current_board, game);
-    console.log(eval);
+    const eval = evaluation(current_board, game, AI_color);
+    updateEvalBar(eval.score);
 
   }
 
@@ -89,7 +147,14 @@ const start = (depth = 2, AI_color = "b") => {
 
     $status.html(status)
     $fen.html(game.fen())
-    $pgn.html(game.pgn())
+
+    // Update move history
+    updateMoveHistory(game.pgn());
+
+    // Update evaluation
+    const current_board = ChessBoard.fenToObj(game.fen());
+    const eval = evaluation(current_board, game, AI_color);
+    updateEvalBar(eval.score);
   }
 
   var onMouseoutSquare = function (square, piece) {

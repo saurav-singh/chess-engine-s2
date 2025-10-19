@@ -17,62 +17,278 @@
   <style>
     html,
     body {
-      overflow: hidden;
+      margin: 0;
+      padding: 0;
       height: 100vh;
-      background-color: #222;
-      color: #aaa;
-      font-family: sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
     }
 
-    #info {
-      height: 120px;
-      border: solid 2px #777;
-      padding: 10px;
-      line-height: 1.5em;
-      overflow: auto;
+    .container {
+      display: flex;
+      height: 100vh;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+      padding: 20px;
     }
 
-    #pgn,
-    #fen {
-      font-size: 9px;
+    .left-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    #myBoard {
+      width: 500px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .right-panel {
+      width: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+    }
+
+    .panel h3 {
+      margin: 0 0 15px 0;
+      font-size: 16px;
+      color: #4ecdc4;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     #status {
       font-weight: bold;
-      color: coral;
+      color: #ff6b6b;
+      font-size: 18px;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: rgba(255, 107, 107, 0.1);
+      border-radius: 8px;
+      text-align: center;
     }
 
-    #myBoard {
-      margin: 1em auto;
-      width: 500px;
+    #control {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #control label {
+      font-size: 12px;
+      color: #aaa;
+      margin-bottom: 5px;
+    }
+
+    #depth {
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      color: #e0e0e0;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    #depth:focus {
+      outline: none;
+      border-color: #4ecdc4;
+    }
+
+    button {
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    /* Evaluation Bar */
+    .eval-container {
+      margin-bottom: 20px;
+    }
+
+    .eval-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 8px;
+      color: #aaa;
+    }
+
+    .eval-bar-container {
+      height: 30px;
+      background: #333;
+      border-radius: 15px;
+      overflow: hidden;
+      position: relative;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .eval-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #4ecdc4 0%, #44a08d 100%);
+      transition: width 0.5s ease;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 10px;
+      font-weight: bold;
+      font-size: 12px;
+      color: white;
+    }
+
+    .eval-value {
+      text-align: center;
+      margin-top: 5px;
+      font-weight: bold;
+      color: #4ecdc4;
+    }
+
+    /* Move History */
+    #move-history {
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    #move-history::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #move-history::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+    }
+
+    #move-history::-webkit-scrollbar-thumb {
+      background: rgba(78, 205, 196, 0.5);
+      border-radius: 4px;
+    }
+
+    .move-pair {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 5px;
+    }
+
+    .move-number {
+      color: #4ecdc4;
+      font-weight: bold;
+      min-width: 30px;
+    }
+
+    .move {
+      color: #e0e0e0;
+      flex: 1;
+    }
+
+    #pgn,
+    #fen {
+      font-size: 10px;
+      color: #666;
+      word-wrap: break-word;
+      margin-top: 10px;
+    }
+
+    .title {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 28px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
   </style>
 
 </head>
 
 <body>
-  <div id="info">
-    <div id="status"> </div>
-
-    <div id="control">
-
-      Depth / Difficulty:
-      <select id="depth" onchange="changeDepth()">
-        <option value="Audi">1
-        <option selected value="BMW">2
-        <option value="Mercedes">3
-      </select>
-
-      <button onclick="resetGame()">Reset</button>
-
+  <div class="container">
+    <div class="left-panel">
+      <div class="title">
+        <h1>Chess Engine</h1>
+      </div>
+      <div id="myBoard"></div>
     </div>
 
-    <div id="fen"></div>
-    <div id="pgn"></div>
+    <div class="right-panel">
+      <!-- Status Panel -->
+      <div class="panel">
+        <div id="status">White to move</div>
+
+        <!-- Evaluation Bar -->
+        <div class="eval-container">
+          <div class="eval-label">
+            <span>White</span>
+            <span>Black</span>
+          </div>
+          <div class="eval-bar-container">
+            <div id="eval-bar" class="eval-bar" style="width: 50%;"></div>
+          </div>
+          <div id="eval-value" class="eval-value">0.0</div>
+        </div>
+
+        <!-- Controls -->
+        <div id="control">
+          <label>Difficulty Level:</label>
+          <select id="depth" onchange="changeDepth()">
+            <option value="1">1 (Easy)
+            <option selected value="2">2 (Medium)
+            <option value="3">3 (Hard)
+          </select>
+
+          <button onclick="resetGame()">New Game</button>
+        </div>
+      </div>
+
+      <!-- Move History Panel -->
+      <div class="panel">
+        <h3>Move History</h3>
+        <div id="move-history"></div>
+      </div>
+
+      <!-- Debug Info -->
+      <div class="panel" style="font-size: 10px;">
+        <div id="fen"></div>
+      </div>
+    </div>
   </div>
 
-
-  <div id="myBoard"></div>
   <script src="main.js"></script>
 </body>
 

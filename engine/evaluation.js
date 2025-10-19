@@ -97,51 +97,288 @@ const boardToArray = {
     a4: [4, 0], b4: [4, 1], c4: [4, 2], d4: [4, 3], e4: [4, 4], f4: [4, 5], g4: [4, 6], h4: [4, 7],
     a3: [5, 0], b3: [5, 1], c3: [5, 2], d3: [5, 3], e3: [5, 4], f3: [5, 5], g3: [5, 6], h3: [5, 7],
     a2: [6, 0], b2: [6, 1], c2: [6, 2], d2: [6, 3], e2: [6, 4], f2: [6, 5], g2: [6, 6], h2: [6, 7],
-    a1: [7, 0], b1: [7, 1], c1: [7, 2], d1: [7, 3], e1: [7, 4], f1: [7, 6], g1: [7, 6], h1: [7, 7],
+    a1: [7, 0], b1: [7, 1], c1: [7, 2], d1: [7, 3], e1: [7, 4], f1: [7, 5], g1: [7, 6], h1: [7, 7],
 }
-// Evlauation Function
+// Helper function to calculate Manhattan distance between two squares
+const getManhattanDistance = (pos1, pos2) => {
+    const p1 = boardToArray[pos1];
+    const p2 = boardToArray[pos2];
+    return Math.abs(p1[0] - p2[0]) + Math.abs(p1[1] - p2[1]);
+}
+
+// Helper function to get distance from center (for pushing king to edges)
+const getDistanceFromCenter = (pos) => {
+    const px = boardToArray[pos];
+    const centerRow = 3.5;
+    const centerCol = 3.5;
+    return Math.abs(px[0] - centerRow) + Math.abs(px[1] - centerCol);
+}
+
+// Evaluate pawn structure
+const evaluatePawnStructure = (board) => {
+    let whiteScore = 0;
+    let blackScore = 0;
+
+    // Track pawns by file
+    const whitePawns = {};
+    const blackPawns = {};
+
+    // Collect all pawns
+    for (let pos in board) {
+        const piece = board[pos];
+        if (piece[1].toLowerCase() === 'p') {
+            const file = pos[0];
+            const rank = parseInt(pos[1]);
+
+            if (piece[0] === 'w') {
+                if (!whitePawns[file]) whitePawns[file] = [];
+                whitePawns[file].push({ pos, rank });
+            } else {
+                if (!blackPawns[file]) blackPawns[file] = [];
+                blackPawns[file].push({ pos, rank });
+            }
+        }
+    }
+
+    // Evaluate white pawns
+    for (let file in whitePawns) {
+        const pawns = whitePawns[file];
+
+        // Doubled pawns penalty
+        if (pawns.length > 1) {
+            whiteScore -= 10 * (pawns.length - 1);
+        }
+
+        pawns.forEach(pawn => {
+            // Check if passed pawn (no enemy pawns ahead on same or adjacent files)
+            const adjacentFiles = [String.fromCharCode(file.charCodeAt(0) - 1),
+                                   file,
+                                   String.fromCharCode(file.charCodeAt(0) + 1)];
+
+            let isPassed = true;
+            for (let adjFile of adjacentFiles) {
+                if (blackPawns[adjFile]) {
+                    for (let enemyPawn of blackPawns[adjFile]) {
+                        if (enemyPawn.rank > pawn.rank) {
+                            isPassed = false;
+                            break;
+                        }
+                    }
+                }
+                if (!isPassed) break;
+            }
+
+            if (isPassed) {
+                // Bonus increases as pawn gets closer to promotion
+                whiteScore += (pawn.rank - 1) * 10;
+            }
+
+            // Check if isolated pawn (no friendly pawns on adjacent files)
+            const leftFile = String.fromCharCode(file.charCodeAt(0) - 1);
+            const rightFile = String.fromCharCode(file.charCodeAt(0) + 1);
+            if (!whitePawns[leftFile] && !whitePawns[rightFile]) {
+                whiteScore -= 8; // Isolated pawn penalty
+            }
+        });
+    }
+
+    // Evaluate black pawns
+    for (let file in blackPawns) {
+        const pawns = blackPawns[file];
+
+        // Doubled pawns penalty
+        if (pawns.length > 1) {
+            blackScore -= 10 * (pawns.length - 1);
+        }
+
+        pawns.forEach(pawn => {
+            // Check if passed pawn
+            const adjacentFiles = [String.fromCharCode(file.charCodeAt(0) - 1),
+                                   file,
+                                   String.fromCharCode(file.charCodeAt(0) + 1)];
+
+            let isPassed = true;
+            for (let adjFile of adjacentFiles) {
+                if (whitePawns[adjFile]) {
+                    for (let enemyPawn of whitePawns[adjFile]) {
+                        if (enemyPawn.rank < pawn.rank) {
+                            isPassed = false;
+                            break;
+                        }
+                    }
+                }
+                if (!isPassed) break;
+            }
+
+            if (isPassed) {
+                // Bonus increases as pawn gets closer to promotion
+                blackScore += (8 - pawn.rank) * 10;
+            }
+
+            // Check if isolated pawn
+            const leftFile = String.fromCharCode(file.charCodeAt(0) - 1);
+            const rightFile = String.fromCharCode(file.charCodeAt(0) + 1);
+            if (!blackPawns[leftFile] && !blackPawns[rightFile]) {
+                blackScore -= 8; // Isolated pawn penalty
+            }
+        });
+    }
+
+    return { white: whiteScore, black: blackScore };
+}
+
+// Evaluation Function
 const evaluation = (board, game = null, ai_color = "b") => {
+
+    // Handle game over states first
+    if (game && game.game_over()) {
+        if (game.in_checkmate()) {
+            // If it's our turn and we're in checkmate, we lost
+            if (game.turn() === ai_color) {
+                return { score: -10000 };
+            } else {
+                // Opponent is in checkmate, we won
+                return { score: 10000 };
+            }
+        }
+        // Draw
+        return { score: 0 };
+    }
 
     let score_white = 0;
     let score_black = 0;
-    let score_white_pieces = 0;
-    let score_black_pieces = 0;
-    let score = 0;
 
-    for (pos in board) {
+    // Track material and piece positions
+    let totalPieces = 0;
+    let whiteMaterial = 0;
+    let blackMaterial = 0;
+    let whiteKingPos = null;
+    let blackKingPos = null;
+    let hasWhiteQueen = false;
+    let hasBlackQueen = false;
+
+    // Evaluate material and position for each piece
+    for (let pos in board) {
         const piece = board[pos];
         const type = piece[1].toLowerCase();
-        const score = weights[type];
+        const pieceValue = weights[type];
         const px = boardToArray[pos];
 
+        totalPieces++;
+
+        // Track kings and queens
+        if (type === 'k') {
+            if (piece[0] === 'b') blackKingPos = pos;
+            else whiteKingPos = pos;
+        }
+        if (type === 'q') {
+            if (piece[0] === 'b') hasBlackQueen = true;
+            else hasWhiteQueen = true;
+        }
+
+        // Use correct piece-square table for each piece type
         if (piece[0] === 'b') {
-            score_black += (score * pos_black.p[px[0]][px[1]]);
-            score_black_pieces += score;
+            blackMaterial += pieceValue;
+            score_black += pieceValue;
+            score_black += (pieceValue * pos_black[type][px[0]][px[1]]) / 100;
+        } else {
+            whiteMaterial += pieceValue;
+            score_white += pieceValue;
+            score_white += (pieceValue * pos_white[type][px[0]][px[1]]) / 100;
+        }
+    }
+
+    // Detect endgame: queens traded or low material
+    const isEndgame = !hasWhiteQueen && !hasBlackQueen || totalPieces <= 10;
+
+    // ENDGAME BONUSES - Critical for checkmate ability
+    if (isEndgame && game) {
+        // Determine who is winning
+        const materialDiff = whiteMaterial - blackMaterial;
+
+        if (Math.abs(materialDiff) > 3) { // Someone has significant material advantage
+            const winningColor = materialDiff > 0 ? 'w' : 'b';
+            const losingColor = materialDiff > 0 ? 'b' : 'w';
+            const losingKingPos = losingColor === 'b' ? blackKingPos : whiteKingPos;
+
+            // 1. Push losing king to edge/corner
+            const edgeBonus = (7 - getDistanceFromCenter(losingKingPos)) * 10;
+
+            // 2. Bring winning pieces closer to losing king
+            let proximityBonus = 0;
+            for (let pos in board) {
+                const piece = board[pos];
+                if (piece[0] === winningColor && piece[1].toLowerCase() !== 'k') {
+                    const distance = getManhattanDistance(pos, losingKingPos);
+                    proximityBonus += (14 - distance) * 2; // Reward pieces being close
+                }
+            }
+
+            // 3. King opposition bonus (bring winning king closer)
+            const winningKingPos = winningColor === 'b' ? blackKingPos : whiteKingPos;
+            const kingDistance = getManhattanDistance(winningKingPos, losingKingPos);
+            const kingProximityBonus = (14 - kingDistance) * 5;
+
+            const totalEndgameBonus = edgeBonus + proximityBonus + kingProximityBonus;
+
+            if (winningColor === 'w') {
+                score_white += totalEndgameBonus;
+            } else {
+                score_black += totalEndgameBonus;
+            }
+        }
+    }
+
+    // Mobility bonus: reward having more legal moves
+    if (game) {
+        const moves = game.moves();
+        const mobilityBonus = moves.length * 0.1;
+
+        if (game.turn() === 'b') {
+            score_black += mobilityBonus;
+        } else {
+            score_white += mobilityBonus;
         }
 
-        else {
-            score_white += (score * pos_white.p[px[0]][px[1]]);
-            score_white_pieces += score;
+        // Add check penalty
+        if (game.in_check()) {
+            if (game.turn() === 'b') {
+                score_black -= 50;
+            } else {
+                score_white -= 50;
+            }
         }
     }
 
-    if (ai_color == "b") {
-        if (game.in_check()) score_black_pieces -= 50;
-        if (game.in_checkmate()) score_black_pieces -= 10000;
-        score = score_black_pieces - score_white_pieces;
-    }
-    else {
-        if (game.in_check()) score_white_pieces -= 50;
-        if (game.in_checkmate()) score_white_pieces -= 10000;
-        score = score_white_pieces - score_black_pieces;
+    // Bonus for controlling center squares in opening/middlegame
+    if (!isEndgame && totalPieces > 12) {
+        const centerSquares = ['d4', 'd5', 'e4', 'e5'];
+        centerSquares.forEach(sq => {
+            if (board[sq]) {
+                const bonus = 5;
+                if (board[sq][0] === 'b') {
+                    score_black += bonus;
+                } else {
+                    score_white += bonus;
+                }
+            }
+        });
     }
 
+    // Evaluate pawn structure
+    const pawnStructure = evaluatePawnStructure(board);
+    score_white += pawnStructure.white;
+    score_black += pawnStructure.black;
+
+    // Calculate final score from AI perspective
+    let finalScore;
+    if (ai_color === "b") {
+        finalScore = score_black - score_white;
+    } else {
+        finalScore = score_white - score_black;
+    }
 
     return {
-        // white: score_white,
-        // black: score_black,
-        // white_pieces: score_white_pieces,
-        // black_pieces: score_black_pieces,
-        score: score,
+        score: finalScore,
     }
 }
