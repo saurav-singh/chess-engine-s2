@@ -1,4 +1,12 @@
-$(document).ready(() => start());
+$(document).ready(() => {
+  start();
+
+  // Disable right-click context menu
+  document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    return false;
+  });
+});
 
 // Change Difficulty | Depth 
 const changeDepth = () => start(parseInt($('#depth').find(":selected").text()));
@@ -49,6 +57,39 @@ const updateMoveHistory = (pgn) => {
   $moveHistory.html(html);
   // Auto-scroll to bottom
   $moveHistory.scrollTop($moveHistory[0].scrollHeight);
+}
+
+// Highlight king when in check
+const highlightKingInCheck = (game) => {
+  // Remove any existing check highlights
+  $('#myBoard .square-55d63').removeClass('check-highlight');
+
+  if (game.in_check()) {
+    // Find the king's position
+    const board = game.board();
+    const turn = game.turn();
+    let kingSquare = null;
+
+    // Search for the king
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const piece = board[row][col];
+        if (piece && piece.type === 'k' && piece.color === turn) {
+          // Convert row/col to square notation (e.g., 'e1', 'e8')
+          const file = String.fromCharCode(97 + col); // a-h
+          const rank = 8 - row; // 1-8
+          kingSquare = file + rank;
+          break;
+        }
+      }
+      if (kingSquare) break;
+    }
+
+    // Highlight the king's square
+    if (kingSquare) {
+      $('#myBoard .square-' + kingSquare).addClass('check-highlight');
+    }
+  }
 }
 
 // Start Game
@@ -155,6 +196,9 @@ const start = (depth = 2, AI_color = "b") => {
     const current_board = ChessBoard.fenToObj(game.fen());
     const eval = evaluation(current_board, game, AI_color);
     updateEvalBar(eval.score);
+
+    // Highlight king if in check
+    highlightKingInCheck(game);
   }
 
   var onMouseoutSquare = function (square, piece) {
